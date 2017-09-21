@@ -1,9 +1,16 @@
+# IUS spec file for php71u-pecl-yaml, forked from:
+#
+# Fedora spec file for php-pecl-yaml
+
+
 %global pecl_name yaml
 %global ini_name  40-%{pecl_name}.ini
 
-Name:           php-pecl-yaml
+%global php_base    php71u
+
+Name:           %{php_base}-pecl-%{pecl_name}
 Version:        2.0.0
-Release:        5%{?dist}
+Release:        5.ius%{?dist}
 Summary:        Support for YAML 1.1 serialization using the LibYAML library
 Group:          Development/Languages
 
@@ -13,17 +20,26 @@ Source0:        http://pecl.php.net/get/%{pecl_name}-%{version}%{?prever}.tgz
 
 Patch0:        f220c0400bd1875879da58788187774a04430ecb.patch
 
-BuildRequires:  php-devel >= 7
-BuildRequires:  php-pear
-BuildRequires:  libyaml-devel
-
-Requires:       php(zend-abi) = %{php_zend_api}
-Requires:       php(api) = %{php_core_api}
+BuildRequires:      %{php_base}-devel
+BuildRequires:      pear >= 1.10.0
+BuildRequires:      libyaml-devel
+Requires:           php(zend-abi) = %{php_zend_api}
+Requires:           php(api) = %{php_core_api}
+Requires(post):     pear >= 1.10.0
+Requires(postun):   pear >= 1.10.0
 
 Provides:       php-%{pecl_name} = %{version}
 Provides:       php-%{pecl_name}%{?_isa} = %{version}
 Provides:       php-pecl(%{pecl_name}) = %{version}
 Provides:       php-pecl(%{pecl_name})%{?_isa} = %{version}
+Provides:       %{php_base}-%{pecl_name} = %{version}
+Provides:       %{php_base}-%{pecl_name}%{?_isa} = %{version}
+Provides:       %{php_base}-pecl(%{pecl_name}) = %{version}
+Provides:       %{php_base}-pecl(%{pecl_name})%{?_isa} = %{version}
+Provides:       php-pecl-%{pecl_name} = %{version}-%{release}
+Provides:       php-pecl-%{pecl_name}%{?_isa} = %{version}-%{release}
+
+Conflicts: php-pecl-%{pecl_name} < %{version}-%{release}
 
 
 %description
@@ -42,7 +58,6 @@ popd
 sed -e 's/role="test"/role="src"/' \
     -e '/LICENSE/s/role="doc"/role="src"/' \
     package.xml >%{pecl_name}-%{version}%{?prever}/package.xml
-
 
 %build
 cd %{pecl_name}-%{version}%{?prever}
@@ -96,6 +111,16 @@ do install -Dpm 644 $i %{buildroot}%{pecl_docdir}/%{pecl_name}/$i
 done
 
 
+%post
+%{pecl_install} %{pecl_xmldir}/%{name}.xml >/dev/null || :
+
+
+%postun
+if [ $1 -eq 0 ]  ; then
+%{pecl_uninstall} %{pecl_name} >/dev/null || :
+fi
+
+
 %files
 %license %{pecl_name}-%{version}%{?prever}/LICENSE
 %doc %{pecl_docdir}/%{pecl_name}
@@ -105,6 +130,9 @@ done
 
 
 %changelog
+* Thu Sep 21 2017 Ben Harper <ben.harper@rackspace.com> - 2.0.0-5.ius
+- initial IUS port
+
 * Thu Aug 03 2017 Fedora Release Engineering <releng@fedoraproject.org> - 2.0.0-5
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_27_Binutils_Mass_Rebuild
 
