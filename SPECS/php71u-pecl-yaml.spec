@@ -9,16 +9,14 @@
 %global php_base    php71u
 
 Name:           %{php_base}-pecl-%{pecl_name}
-Version:        2.0.0
-Release:        5.ius%{?dist}
+Version:        2.0.2
+Release:        1.ius%{?dist}
 Summary:        Support for YAML 1.1 serialization using the LibYAML library
 Group:          Development/Languages
 
 License:        MIT
 URL:            http://pecl.php.net/package/yaml
 Source0:        http://pecl.php.net/get/%{pecl_name}-%{version}%{?prever}.tgz
-
-Patch0:        f220c0400bd1875879da58788187774a04430ecb.patch
 
 BuildRequires:      %{php_base}-devel
 BuildRequires:      pear >= 1.10.0
@@ -49,10 +47,6 @@ constructs as valid YAML 1.1 documents.
 
 %prep
 %setup -q -c
-
-pushd %{pecl_name}-%{version}%{?prever}
-%patch0 -p1 -b .upstream
-popd
 
 # Remove test file to avoid regsitration (pecl list-files yaml)
 sed -e 's/role="test"/role="src"/' \
@@ -130,6 +124,10 @@ fi
 
 
 %changelog
+* Thu Sep 28 2017 Ben Harper <ben.harper@rackspace.com> - 2.0.2-1.ius
+- Latest upstream
+- Remove Patch0, fixed upstream
+
 * Thu Sep 21 2017 Ben Harper <ben.harper@rackspace.com> - 2.0.0-5.ius
 - initial IUS port
 
