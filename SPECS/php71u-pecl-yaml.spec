@@ -8,7 +8,7 @@
 
 Name:           %{php}-pecl-%{pecl_name}
 Version:        2.0.2
-Release:        1.ius%{?dist}
+Release:        2.ius%{?dist}
 Summary:        Support for YAML 1.1 serialization using the LibYAML library
 Group:          Development/Languages
 
@@ -17,12 +17,17 @@ URL:            https://pecl.php.net/package/yaml
 Source0:        https://pecl.php.net/get/%{pecl_name}-%{version}.tgz
 
 BuildRequires:  %{php}-devel
-BuildRequires:  pear >= 1.10.0
 BuildRequires:  libyaml-devel
+
+BuildRequires:  pear1u
+# explicitly require pear dependencies to avoid conflicts
+BuildRequires:  %{php}-cli
+BuildRequires:  %{php}-common
+BuildRequires:  %{php}-process
+BuildRequires:  %{php}-xml
+
 Requires:       php(zend-abi) = %{php_zend_api}
 Requires:       php(api) = %{php_core_api}
-Requires(post):     pear >= 1.10.0
-Requires(postun):   pear >= 1.10.0
 
 # provide the stock name
 Provides:       php-pecl-%{pecl_name} = %{version}
@@ -112,13 +117,21 @@ do install -D -p -m 644 $i %{buildroot}%{pecl_docdir}/%{pecl_name}/$i
 done
 
 
-%post
-%{pecl_install} %{pecl_xmldir}/%{name}.xml >/dev/null || :
+%triggerin -- pear1u
+if [ -x %{__pecl} ]; then
+    %{pecl_install} %{pecl_xmldir}/%{pecl_name}.xml >/dev/null || :
+fi
+
+
+%posttrans
+if [ -x %{__pecl} ]; then
+    %{pecl_install} %{pecl_xmldir}/%{pecl_name}.xml >/dev/null || :
+fi
 
 
 %postun
-if [ $1 -eq 0 ]  ; then
-%{pecl_uninstall} %{pecl_name} >/dev/null || :
+if [ $1 -eq 0 -a -x %{__pecl} ]; then
+    %{pecl_uninstall} %{pecl_name} >/dev/null || :
 fi
 
 
@@ -131,6 +144,9 @@ fi
 
 
 %changelog
+* Wed Jan 31 2018 Carl George <carl@george.computer> - 2.0.2-2.ius
+- Remove pear requirement and update scriptlets (adapted from remirepo)
+
 * Thu Sep 28 2017 Ben Harper <ben.harper@rackspace.com> - 2.0.2-1.ius
 - Latest upstream
 - Remove Patch0, fixed upstream
