@@ -2,42 +2,49 @@
 #
 # Fedora spec file for php-pecl-yaml
 
-
 %global pecl_name yaml
 %global ini_name  40-%{pecl_name}.ini
+%global php       php71u
 
-%global php_base    php71u
-
-Name:           %{php_base}-pecl-%{pecl_name}
+Name:           %{php}-pecl-%{pecl_name}
 Version:        2.0.2
 Release:        1.ius%{?dist}
 Summary:        Support for YAML 1.1 serialization using the LibYAML library
 Group:          Development/Languages
 
 License:        MIT
-URL:            http://pecl.php.net/package/yaml
-Source0:        http://pecl.php.net/get/%{pecl_name}-%{version}%{?prever}.tgz
+URL:            https://pecl.php.net/package/yaml
+Source0:        https://pecl.php.net/get/%{pecl_name}-%{version}.tgz
 
-BuildRequires:      %{php_base}-devel
-BuildRequires:      pear >= 1.10.0
-BuildRequires:      libyaml-devel
-Requires:           php(zend-abi) = %{php_zend_api}
-Requires:           php(api) = %{php_core_api}
+BuildRequires:  %{php}-devel
+BuildRequires:  pear >= 1.10.0
+BuildRequires:  libyaml-devel
+Requires:       php(zend-abi) = %{php_zend_api}
+Requires:       php(api) = %{php_core_api}
 Requires(post):     pear >= 1.10.0
 Requires(postun):   pear >= 1.10.0
 
+# provide the stock name
+Provides:       php-pecl-%{pecl_name} = %{version}
+Provides:       php-pecl-%{pecl_name}%{?_isa} = %{version}
+
+# provide the stock and IUS names without pecl
 Provides:       php-%{pecl_name} = %{version}
 Provides:       php-%{pecl_name}%{?_isa} = %{version}
+Provides:       %{php}-%{pecl_name} = %{version}
+Provides:       %{php}-%{pecl_name}%{?_isa} = %{version}
+
+# provide the stock and IUS names in pecl() format
 Provides:       php-pecl(%{pecl_name}) = %{version}
 Provides:       php-pecl(%{pecl_name})%{?_isa} = %{version}
-Provides:       %{php_base}-%{pecl_name} = %{version}
-Provides:       %{php_base}-%{pecl_name}%{?_isa} = %{version}
-Provides:       %{php_base}-pecl(%{pecl_name}) = %{version}
-Provides:       %{php_base}-pecl(%{pecl_name})%{?_isa} = %{version}
-Provides:       php-pecl-%{pecl_name} = %{version}-%{release}
-Provides:       php-pecl-%{pecl_name}%{?_isa} = %{version}-%{release}
+Provides:       %{php}-pecl(%{pecl_name}) = %{version}
+Provides:       %{php}-pecl(%{pecl_name})%{?_isa} = %{version}
 
-Conflicts: php-pecl-%{pecl_name} < %{version}-%{release}
+# conflict with the stock name
+Conflicts:      php-pecl-%{pecl_name} < %{version}
+
+%{?filter_provides_in: %filter_provides_in %{php_extdir}/.*\.so$}
+%{?filter_setup}
 
 
 %description
@@ -45,33 +52,34 @@ The YAML PHP Extension provides a wrapper to the LibYAML library. It gives the
 user the ability to parse YAML document streams into PHP constructs and emit PHP
 constructs as valid YAML 1.1 documents.
 
+
 %prep
 %setup -q -c
 
-# Remove test file to avoid regsitration (pecl list-files yaml)
 sed -e 's/role="test"/role="src"/' \
     -e '/LICENSE/s/role="doc"/role="src"/' \
     package.xml >%{pecl_name}-%{version}%{?prever}/package.xml
 
+
 %build
-cd %{pecl_name}-%{version}%{?prever}
+cd %{pecl_name}-%{version}
 phpize
 %configure
-make %{?_smp_mflags}
+%make_build
 
 
 %check
-cd %{pecl_name}-%{version}%{?prever}
+cd %{pecl_name}-%{version}
 make test NO_INTERACTION=1 REPORT_EXIT_STATUS=1
 
 
 %install
-cd %{pecl_name}-%{version}%{?prever}
+cd %{pecl_name}-%{version}
 make install INSTALL_ROOT=%{buildroot}
 
 # Basic configuration
-mkdir -p %{buildroot}%{_sysconfdir}/php.d
-cat > %{buildroot}%{_sysconfdir}/php.d/%{ini_name} << 'EOF'
+mkdir -p %{buildroot}%{php_inidir}
+cat > %{buildroot}%{php_inidir}/%{ini_name} << EOF
 ; Enable %{pecl_name} extension module
 extension=%{pecl_name}.so
 
@@ -96,12 +104,11 @@ yaml.decode_php = 0
 EOF
 
 # Package info
-mkdir -p %{buildroot}%{pecl_xmldir}
-install -p -m 644 package.xml %{buildroot}%{pecl_xmldir}/%{name}.xml
+install -D -p -m 644 package.xml %{buildroot}%{pecl_xmldir}/%{pecl_name}.xml
 
 # Documentation
 for i in $(grep 'role="doc"' package.xml | sed -e 's/^.*name="//;s/".*$//')
-do install -Dpm 644 $i %{buildroot}%{pecl_docdir}/%{pecl_name}/$i
+do install -D -p -m 644 $i %{buildroot}%{pecl_docdir}/%{pecl_name}/$i
 done
 
 
@@ -116,11 +123,11 @@ fi
 
 
 %files
-%license %{pecl_name}-%{version}%{?prever}/LICENSE
+%license %{pecl_name}-%{version}/LICENSE
 %doc %{pecl_docdir}/%{pecl_name}
-%config(noreplace) %{_sysconfdir}/php.d/%{ini_name}
+%config(noreplace) %{php_inidir}/%{ini_name}
 %{php_extdir}/%{pecl_name}.so
-%{pecl_xmldir}/%{name}.xml
+%{pecl_xmldir}/%{pecl_name}.xml
 
 
 %changelog
